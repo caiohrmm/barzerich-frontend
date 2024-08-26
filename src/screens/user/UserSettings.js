@@ -1,10 +1,11 @@
-import React, { useState, useContext } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useContext } from "react";
+import { View, Text, Button, StyleSheet } from "react-native";
 
-const HomeScreen = ({ navigation }) => {
+const UserSettings = ({ navigation }) => {
+
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Bem-vindo ao Barzerich!</Text>
+      <Text style={styles.text}>Configurações do Usuário</Text>
     </View>
   );
 };
@@ -21,4 +22,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default UserSettings;

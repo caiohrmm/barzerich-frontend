@@ -1,14 +1,13 @@
 import React, { useState, useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
 
-const HomeScreen = ({ navigation }) => {
+const ProductsScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Bem-vindo ao Barzerich!</Text>
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -21,4 +20,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default ProductsScreen

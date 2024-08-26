@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from "react";
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../utils/api";
 
@@ -9,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [userToken, setUserToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); // Novo estado para mensagens de sucesso
 
   useEffect(() => {
     const loadToken = async () => {
@@ -25,9 +25,13 @@ export const AuthProvider = ({ children }) => {
     loadToken();
   }, []);
 
+  const clearMessages = () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
   const login = async (username, password) => {
     try {
-      console.log("a");
       const response = await api.post("/users/login", {
         username,
         password,
@@ -36,13 +40,14 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem("userToken", token);
       setUserToken(token);
       setErrorMessage("");
+      setSuccessMessage("Login realizado com sucesso!"); // Define a mensagem de sucesso
     } catch (error) {
       if (error.response) {
         setErrorMessage(error.response.data.message);
-        console.log(error.response.data.message)
       } else {
-        console.log(error);
+        setErrorMessage("Erro de conexão. Tente novamente mais tarde.");
       }
+      setSuccessMessage(""); // Limpa a mensagem de sucesso em caso de erro
     }
   };
 
@@ -50,37 +55,48 @@ export const AuthProvider = ({ children }) => {
     try {
       await AsyncStorage.removeItem("userToken");
       setUserToken(null);
+      setSuccessMessage("Logout realizado com sucesso!"); // Define a mensagem de sucesso
     } catch (error) {
       console.error("Falha ao remover o token:", error);
+      setErrorMessage("Falha ao fazer logout. Tente novamente.");
     }
   };
 
-  const register = async (username, password) => {
+  const register = async (username, password, confirmPassword) => {
     try {
-      const response = await axios.post(
-        "http://localhost:5000/users/register",
-        {
-          username,
-          password,
-        }
-      );
+      const response = await api.post("/users/register", {
+        username,
+        password,
+        confirmPassword,
+      });
 
       const token = response.data.token;
       await AsyncStorage.setItem("userToken", token);
       setUserToken(token);
       setErrorMessage("");
+      setSuccessMessage("Registro realizado com sucesso!"); // Define a mensagem de sucesso
     } catch (error) {
       if (error.response) {
         setErrorMessage(error.response.data.message);
       } else {
         setErrorMessage("Erro de conexão. Tente novamente mais tarde.");
       }
+      setSuccessMessage(""); // Limpa a mensagem de sucesso em caso de erro
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ userToken, login, logout, errorMessage, isLoading, register }}
+      value={{
+        userToken,
+        login,
+        logout,
+        errorMessage,
+        successMessage, // Incluindo successMessage no contexto
+        isLoading,
+        register,
+        clearMessages
+      }}
     >
       {children}
     </AuthContext.Provider>

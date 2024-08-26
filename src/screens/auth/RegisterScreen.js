@@ -1,12 +1,12 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  Image
+  Image,
+  Animated,
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -14,13 +14,48 @@ const RegisterScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { register, errorMessage } = useContext(AuthContext);
+  const { register, userToken, errorMessage, successMessage, clearMessages } =
+    useContext(AuthContext);
+  const [fadeAnim] = useState(new Animated.Value(0)); // Animação para popups
+
+  useEffect(() => {
+    if (userToken) {
+      // Exibe o popup de sucesso antes de redirecionar
+      setTimeout(() => {
+        navigation.navigate("Home");
+      }, 1000); // Ajuste o tempo conforme necessário
+    }
+  }, [userToken]);
+
+  useEffect(() => {
+    if (errorMessage || successMessage) {
+      // Faz o popup aparecer
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+
+      // Remove o popup após 3 segundos
+      setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, 3000);
+    }
+  }, [errorMessage, successMessage]);
+
+  useEffect(() => {
+    // Limpa as mensagens quando o componente é desmontado
+    return () => {
+      clearMessages();
+    };
+  }, []);
 
   const handleRegister = async () => {
-    await register(username, password);
-    if (errorMessage) {
-      Alert.alert("Erro", errorMessage);
-    }
+    await register(username, password, confirmPassword);
   };
 
   return (
@@ -60,6 +95,19 @@ const RegisterScreen = ({ navigation }) => {
           <Text style={styles.link}>Já tem uma conta? Faça login</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Popup de Mensagens */}
+      {(errorMessage || successMessage) && (
+        <Animated.View
+          style={[
+            styles.popup,
+            { opacity: fadeAnim },
+            errorMessage ? styles.error : styles.success,
+          ]}
+        >
+          <Text style={styles.popupText}>{errorMessage || successMessage}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -72,8 +120,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   logo: {
-    width: 250,
-    height: 250,
+    width: 300,
+    height: 300,
     marginBottom: 20,
   },
   formContainer: {
@@ -107,7 +155,7 @@ const styles = StyleSheet.create({
   button: {
     width: "100%",
     height: 50,
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#DAA520",
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
@@ -121,13 +169,33 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
   link: {
-    color: "#4CAF50",
+    color: "#DAA520",
     marginTop: 15,
     textDecorationLine: "underline",
     textAlign: "center",
+  },
+  popup: {
+    position: "absolute",
+    top: 10,
+    width: "90%",
+    padding: 15,
+    borderRadius: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  popupText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  error: {
+    backgroundColor: "#f44336", // Vermelho para erro
+  },
+  success: {
+    backgroundColor: "#4CAF50", // Verde para sucesso
   },
 });
 

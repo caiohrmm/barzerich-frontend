@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,20 +7,63 @@ import {
   StyleSheet,
   Image,
   Alert,
-  Button
+  Animated,
 } from "react-native";
 import { AuthContext } from "../../context/AuthContext";
 
-const LoginScreen = ({navigation}) => {
+const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login, userToken, errorMessage } = useContext(AuthContext);
+  const { login, userToken, errorMessage, successMessage, clearMessages } =
+    useContext(AuthContext);
+  const [fadeAnim] = useState(new Animated.Value(0)); // Animação para popups
+
+  useEffect(() => {
+    if (userToken) {
+      // Exibe o popup de sucesso antes de redirecionar
+      setTimeout(() => {
+        navigation.navigate("Home");
+      }, 1000); // Ajuste o tempo conforme necessário
+    }
+  }, [userToken]);
+
+  useEffect(() => {
+    // Limpa as mensagens quando o componente é desmontado
+    return () => {
+      clearMessages();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (errorMessage || successMessage) {
+      console.log("Iniciando animação para popup...");
+      // Faz o popup aparecer
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        // Log para verificar se a animação começou
+        console.log("Animação de popup iniciada.");
+      });
+
+      // Remove o popup após 3 segundos
+      const timeout = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => {
+          // Log para verificar se a animação terminou
+          console.log("Animação de popup encerrada.");
+        });
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [errorMessage, successMessage]);
 
   const handleLogin = async () => {
     await login(username, password);
-    if (!userToken && errorMessage) {
-      Alert.alert("Erro", errorMessage);
-    }
   };
 
   return (
@@ -47,11 +90,24 @@ const LoginScreen = ({navigation}) => {
         />
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity> 
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Register")}>
           <Text style={styles.link}>Não tem uma conta? Registre-se</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Popup de Mensagens */}
+      {(errorMessage || successMessage) && (
+        <Animated.View
+          style={[
+            styles.popup,
+            { opacity: fadeAnim },
+            errorMessage ? styles.error : styles.success,
+          ]}
+        >
+          <Text style={styles.popupText}>{errorMessage || successMessage}</Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -64,8 +120,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   logo: {
-    width: 250,
-    height: 250,
+    width: 300,
+    height: 300,
     marginBottom: 20,
   },
   formContainer: {
@@ -99,7 +155,7 @@ const styles = StyleSheet.create({
   button: {
     width: "100%",
     height: 50,
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#DAA520",
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
@@ -116,10 +172,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   link: {
-    color: "#4CAF50",
+    color: "#DAA520",
     marginTop: 15,
     textDecorationLine: "underline",
     textAlign: "center",
+  },
+  popup: {
+    position: "absolute",
+    top: 10,
+    width: "90%",
+    padding: 15,
+    borderRadius: 5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  popupText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  error: {
+    backgroundColor: "#f44336", // Vermelho para erro
+  },
+  success: {
+    backgroundColor: "#4CAF50", // Verde para sucesso
   },
 });
 
