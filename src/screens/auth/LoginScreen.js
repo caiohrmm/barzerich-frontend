@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,29 +6,26 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Alert,
   Animated,
 } from "react-native";
+import { useForm, Controller } from "react-hook-form";
 import { AuthContext } from "../../context/AuthContext";
 
 const LoginScreen = ({ navigation }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const { control, handleSubmit } = useForm();
   const { login, userToken, errorMessage, successMessage, clearMessages } =
     useContext(AuthContext);
   const [fadeAnim] = useState(new Animated.Value(0)); // Animação para popups
 
   useEffect(() => {
     if (userToken) {
-      // Exibe o popup de sucesso antes de redirecionar
       setTimeout(() => {
         navigation.navigate("Home");
-      }, 1000); // Ajuste o tempo conforme necessário
+      }, 1000);
     }
   }, [userToken]);
 
   useEffect(() => {
-    // Limpa as mensagens quando o componente é desmontado
     return () => {
       clearMessages();
     };
@@ -36,34 +33,25 @@ const LoginScreen = ({ navigation }) => {
 
   useEffect(() => {
     if (errorMessage || successMessage) {
-      console.log("Iniciando animação para popup...");
-      // Faz o popup aparecer
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-      }).start(() => {
-        // Log para verificar se a animação começou
-        console.log("Animação de popup iniciada.");
-      });
+      }).start();
 
-      // Remove o popup após 3 segundos
       const timeout = setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 500,
           useNativeDriver: true,
-        }).start(() => {
-          // Log para verificar se a animação terminou
-          console.log("Animação de popup encerrada.");
-        });
+        }).start();
       }, 3000);
       return () => clearTimeout(timeout);
     }
   }, [errorMessage, successMessage]);
 
-  const handleLogin = async () => {
-    await login(username, password);
+  const onSubmit = async (data) => {
+    await login(data.username, data.password);
   };
 
   return (
@@ -73,22 +61,41 @@ const LoginScreen = ({ navigation }) => {
         style={styles.logo}
       />
       <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nome do Usuário"
-          placeholderTextColor="#aaa"
-          value={username}
-          onChangeText={setUsername}
+        <Controller
+          control={control}
+          name="username"
+          defaultValue=""
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Nome do Usuário"
+              placeholderTextColor="#aaa"
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
+        <Controller
+          control={control}
+          name="password"
+          defaultValue=""
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor="#aaa"
+              secureTextEntry
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
         />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSubmit(onSubmit)}
+        >
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Register")}>
@@ -96,7 +103,6 @@ const LoginScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Popup de Mensagens */}
       {(errorMessage || successMessage) && (
         <Animated.View
           style={[

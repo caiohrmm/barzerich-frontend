@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,87 +8,110 @@ import {
   Image,
   Animated,
 } from "react-native";
+import { useForm, Controller } from "react-hook-form";
 import { AuthContext } from "../../context/AuthContext";
 
 const RegisterScreen = ({ navigation }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const { control, handleSubmit } = useForm();
   const { register, userToken, errorMessage, successMessage, clearMessages } =
     useContext(AuthContext);
   const [fadeAnim] = useState(new Animated.Value(0)); // Animação para popups
 
   useEffect(() => {
     if (userToken) {
-      // Exibe o popup de sucesso antes de redirecionar
       setTimeout(() => {
         navigation.navigate("Home");
-      }, 1000); // Ajuste o tempo conforme necessário
+      }, 1000);
     }
   }, [userToken]);
 
   useEffect(() => {
+    return () => {
+      clearMessages();
+    };
+  }, []);
+
+  useEffect(() => {
     if (errorMessage || successMessage) {
-      // Faz o popup aparecer
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
       }).start();
 
-      // Remove o popup após 3 segundos
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 500,
           useNativeDriver: true,
         }).start();
       }, 3000);
+      return () => clearTimeout(timeout);
     }
   }, [errorMessage, successMessage]);
 
-  useEffect(() => {
-    // Limpa as mensagens quando o componente é desmontado
-    return () => {
-      clearMessages();
-    };
-  }, []);
-
-  const handleRegister = async () => {
-    await register(username, password, confirmPassword);
+  const onSubmit = async (data) => {
+    await register(data.username, data.password, data.confirmPassword);
   };
 
   return (
     <View style={styles.container}>
       <Image
-        source={require("../../../assets/background.png")} // Caminho atualizado
+        source={require("../../../assets/background.png")}
         style={styles.logo}
       />
       <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nome do usuário"
-          placeholderTextColor="#aaa"
-          value={username}
-          onChangeText={setUsername}
+        <Controller
+          control={control}
+          name="username"
+          defaultValue=""
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Nome do usuário"
+              placeholderTextColor="#aaa"
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
+        <Controller
+          control={control}
+          name="password"
+          defaultValue=""
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor="#aaa"
+              secureTextEntry
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirme sua senha"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
+        <Controller
+          control={control}
+          name="confirmPassword"
+          defaultValue=""
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Confirme sua senha"
+              placeholderTextColor="#aaa"
+              secureTextEntry
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+            />
+          )}
         />
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSubmit(onSubmit)}
+        >
           <Text style={styles.buttonText}>Registrar</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("Login")}>
@@ -96,7 +119,6 @@ const RegisterScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Popup de Mensagens */}
       {(errorMessage || successMessage) && (
         <Animated.View
           style={[
